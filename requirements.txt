@@ -1,7 +1,6 @@
-streamlit==1.36.0
-# Newer Transformers so it can use tokenizers 0.21.x on Python 3.13
+ï»¿streamlit==1.36.0
 transformers==4.46.3
-# Let Transformers pull its compatible tokenizers — DO NOT PIN tokenizers here
+tokenizers==0.21.4
 sentencepiece==0.2.1
 safetensors==0.6.2
 torch==2.5.1
