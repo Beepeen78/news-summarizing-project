@@ -9,3 +9,15 @@ huggingface-hub==0.24.5
 safetensors==0.4.3
 evaluate==0.4.2
 reportlab==4.2.2
+flask==2.3.2
+scikit-learn==1.4.2
+pandas==2.2.2
+numpy==1.26.4
+gunicorn==21.2.0
+
+
+
+
+
+
+
