@@ -1,16 +1,16 @@
-# app.py
-import streamlit as st
-st.set_page_config(page_title="News Summarizer", page_icon="📰", layout="centered")
-
+﻿import streamlit as st
 from transformers import pipeline
+
+# 👇 Must be first Streamlit call, and only once
+st.set_page_config(page_title="News Summarizer", page_icon="📰", layout="centered")
 
 @st.cache_resource(show_spinner=False)
 def load_summarizer(model_name: str):
-    # CPU on Streamlit Cloud; device=-1 forces CPU
+    # device=-1 => CPU (works on Streamlit Cloud)
     return pipeline("summarization", model=model_name, framework="pt", device=-1)
 
 def summarize_long_text(summarizer, text: str, max_len: int, min_len: int):
-    # simple chunking to stay within model limits
+    # Simple chunking to keep input within model limits
     text = text.strip()
     chunk_size = 2500
     chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
@@ -28,6 +28,7 @@ def summarize_long_text(summarizer, text: str, max_len: int, min_len: int):
         parts.append(out[0]["summary_text"].strip())
 
     if len(parts) > 1:
+        # second pass to tighten
         joined = " ".join(parts)
         out = summarizer(
             joined,
@@ -37,10 +38,11 @@ def summarize_long_text(summarizer, text: str, max_len: int, min_len: int):
             truncation=True,
         )
         return out[0]["summary_text"].strip()
+
     return parts[0] if parts else ""
 
 st.title("📰 News Summarizer")
-st.caption("Paste an article text → click Summarize → get a concise summary.")
+st.caption("Paste an article URL or text → click Summarize → get a concise summary.")
 
 model = st.selectbox(
     "Model",
