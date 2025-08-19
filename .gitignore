@@ -26,3 +26,6 @@ venv.bak/
 
 # Logs
 *.log
+hf-cache/
+t5-small/
+pegasus-small/
