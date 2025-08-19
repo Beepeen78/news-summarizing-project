@@ -1,11 +1,11 @@
---extra-index-url https://download.pytorch.org/whl/cpu
 streamlit==1.36.0
 transformers==4.42.3
-tokenizers>=0.19.1
-sentencepiece>=0.2.0
-safetensors>=0.4.3
-torch==2.5.1+cpu
+tokenizers==0.19.1
+sentencepiece==0.2.1
+safetensors==0.4.3
+# Rely on PyPI wheels (no extra index). If you need CPU-only, use plain torch.
+torch==2.5.1
 nltk==3.8.1
-evaluate>=0.4.1
-reportlab>=4.1.0
-Pillow>=10.2.0
+evaluate==0.4.1
+reportlab==4.1.0
+Pillow<11
