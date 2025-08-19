@@ -1,4 +1,17 @@
-﻿import streamlit as st
+# app.py
+import streamlit as st
+
+# Must be the first Streamlit command in the script
+st.set_page_config(page_title="News Summarizer", page_icon="📰")
+
+st.title("📰 News Summarizer")
+st.caption("Paste an article URL or text → click Summarize → get a concise summary.")
+
+# ...rest of your imports are fine after this, but avoid other st.* before set_page_config
+from transformers import T5ForConditionalGeneration, T5Tokenizer
+# ...your app logic/UI below
+
+import streamlit as st
 from transformers import pipeline
 
 st.set_page_config(page_title="News Summarizer", page_icon="📰", layout="centered")
@@ -71,3 +84,4 @@ if st.button("Summarize", type="primary", disabled=not text.strip()):
     st.write(summary)
 
     st.download_button("Download summary", summary, file_name="summary.txt")
+
