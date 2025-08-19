@@ -1,6 +1,6 @@
 ﻿streamlit==1.36.0
 transformers==4.46.3
-tokenizers==0.21.4
+tokenizers==0.20.1
 sentencepiece==0.2.1
 safetensors==0.6.2
 torch==2.5.1
