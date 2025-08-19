@@ -1,104 +1,73 @@
-from flask import Flask
-import gradio as gr
-from transformers import T5ForConditionalGeneration, T5Tokenizer, PegasusForConditionalGeneration, PegasusTokenizer
-import evaluate
-import nltk
+﻿import streamlit as st
+from transformers import pipeline
 
-# Ensure that the NLTK sentence tokenizer is available
-nltk.download('punkt')
+st.set_page_config(page_title="News Summarizer", page_icon="📰", layout="centered")
 
-# Initialize Flask app
-app = Flask(__name__)
+@st.cache_resource(show_spinner=False)
+def load_summarizer(model_name: str):
+    # CPU by default on Streamlit Cloud; device -1 = CPU
+    return pipeline("summarization", model=model_name, framework="pt", device=-1)
 
-# Load the T5 model and tokenizer
-t5_model = T5ForConditionalGeneration.from_pretrained('t5-small')
-t5_tokenizer = T5Tokenizer.from_pretrained('t5-small')
+def summarize_long_text(summarizer, text: str, max_len: int, min_len: int):
+    # Simple char-based chunking to stay under model token limits
+    chunks = []
+    chunk_size = 2500  # ~safe for distilbart on CPU
+    text = text.strip()
+    for i in range(0, len(text), chunk_size):
+        chunks.append(text[i:i+chunk_size])
 
-# Load the PEGASUS model and tokenizer
-pegasus_model = PegasusForConditionalGeneration.from_pretrained('google/pegasus-xsum')
-pegasus_tokenizer = PegasusTokenizer.from_pretrained('google/pegasus-xsum')
+    parts = []
+    for idx, chunk in enumerate(chunks, 1):
+        with st.status(f"Summarizing chunk {idx}/{len(chunks)}...", expanded=False):
+            out = summarizer(
+                chunk,
+                max_length=max_len,
+                min_length=min_len,
+                do_sample=False,
+                truncation=True,
+            )
+        parts.append(out[0]["summary_text"].strip())
 
-# Load the ROUGE metric
-rouge = evaluate.load("rouge")
+    # If multiple chunks, do a final pass to tighten it
+    if len(parts) > 1:
+        joined = " ".join(parts)
+        out = summarizer(
+            joined,
+            max_length=max_len,
+            min_length=min_len,
+            do_sample=False,
+            truncation=True,
+        )
+        return out[0]["summary_text"].strip()
+    return parts[0] if parts else ""
 
-# Function to generate a summary using T5
-def generate_t5_summary(text):
-    num_beams = 25  # Further increase beams for more diverse summaries
-    length_penalty = 1.0  # Neutral to balance summary length
-    no_repeat_ngram_size = 2  # Allow for more bigram coverage
-    max_length = 150  # Focus on concise yet informative summaries
-    min_length = 80  # Ensure summary includes core content
-    do_sample = False
+st.title("📰 News Summarizer")
 
-    t5_inputs = t5_tokenizer.encode("summarize: " + text, return_tensors="pt", max_length=512, truncation=True)
-    t5_summary_ids = t5_model.generate(t5_inputs, max_length=max_length, min_length=min_length, 
-                                       num_beams=num_beams, length_penalty=length_penalty, 
-                                       no_repeat_ngram_size=no_repeat_ngram_size, 
-                                       do_sample=do_sample, early_stopping=True)
-    t5_summary = t5_tokenizer.decode(t5_summary_ids[0], skip_special_tokens=True)
-    
-    return t5_summary
+model = st.selectbox(
+    "Model",
+    ("sshleifer/distilbart-cnn-12-6", "facebook/bart-large-cnn", "t5-small"),
+    index=0,
+    help="DistilBART is light & fast for CPU on Streamlit Cloud."
+)
 
-# Function to generate a summary using PEGASUS
-def generate_pegasus_summary(text):
-    num_beams = 25
-    length_penalty = 1.2
-    no_repeat_ngram_size = 2
-    max_length = 150
-    min_length = 80
-    do_sample = False
+col1, col2 = st.columns(2)
+with col1:
+    max_len = st.slider("Max summary length", 64, 512, 180, step=8)
+with col2:
+    min_len = st.slider("Min summary length", 20, 200, 60, step=5)
 
-    pegasus_inputs = pegasus_tokenizer(text, return_tensors="pt", truncation=True, padding="longest", max_length=512)
-    pegasus_summary_ids = pegasus_model.generate(pegasus_inputs['input_ids'], max_length=max_length, min_length=min_length, 
-                                                 num_beams=num_beams, length_penalty=length_penalty, 
-                                                 no_repeat_ngram_size=no_repeat_ngram_size, 
-                                                 do_sample=do_sample, early_stopping=True)
-    pegasus_summary = pegasus_tokenizer.decode(pegasus_summary_ids[0], skip_special_tokens=True)
-    
-    return pegasus_summary
+text = st.text_area(
+    "Paste article text",
+    height=240,
+    placeholder="Paste a news article here…",
+)
 
-# Function to generate a combined summary with an emphasis on bigrams
-def generate_weighted_combined_summary(text, weight_t5=0.4, weight_pegasus=0.6):
-    t5_summary = generate_t5_summary(text)
-    pegasus_summary = generate_pegasus_summary(text)
+if st.button("Summarize", type="primary", disabled=not text.strip()):
+    with st.spinner("Loading model… (first run may take a bit)"):
+        summarizer = load_summarizer(model)
+    with st.spinner("Summarizing…"):
+        summary = summarize_long_text(summarizer, text, max_len, min_len)
+    st.subheader("Summary")
+    st.write(summary)
 
-    # Tokenize summaries into sentences
-    t5_sentences = nltk.sent_tokenize(t5_summary)
-    pegasus_sentences = nltk.sent_tokenize(pegasus_summary)
-
-    # Combine sentences with a focus on maximizing bigram overlap
-    combined_sentences = []
-    combined_sentences.extend(t5_sentences[:int(len(t5_sentences) * weight_t5)])
-    combined_sentences.extend(pegasus_sentences[:int(len(pegasus_sentences) * weight_pegasus)])
-
-    # Combine the sentences into the final summary
-    combined_summary = " ".join(combined_sentences)
-    
-    return combined_summary
-
-# Function to calculate ROUGE scores
-def calculate_rouge_scores(generated_summary, reference_summary):
-    scores = rouge.compute(predictions=[generated_summary], references=[reference_summary])
-    return {
-        "ROUGE-1": scores['rouge1'],
-        "ROUGE-2": scores['rouge2'],
-        "ROUGE-L": scores['rougeL']
-    }
-
-# Define the Gradio interface
-def gradio_interface():
-    iface = gr.Interface(fn=generate_weighted_combined_summary, 
-                         inputs="textbox", 
-                         outputs="textbox", 
-                         title="Text Summarizer",
-                         description="Enter a text to generate a summary using combined T5 and PEGASUS models.")
-    return iface.launch(prevent_thread_lock=True)
-
-# Define the home route for Flask
-@app.route("/")
-def home():
-    return gradio_interface()
-
-# Run the Flask app
-if __name__ == "__main__":
-    app.run(debug=True)
+    st.download_button("Download summary", summary, file_name="summary.txt")
