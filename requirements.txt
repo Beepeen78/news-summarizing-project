@@ -3,9 +3,6 @@ streamlit==1.36.0
 transformers==4.46.3
 tokenizers==0.20.3
 safetensors==0.6.2
-torch==2.5.1
-evaluate==0.4.5
-nltk==3.8.1
-pandas==2.3.1
-pyarrow==21.0.0
-reportlab==4.4.3
+torch==2.5.1+cpu
+sentencepiece==0.2.1
+Pillow<11
