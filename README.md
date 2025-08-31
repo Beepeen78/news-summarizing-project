@@ -6,7 +6,7 @@ A lightweight Streamlit app that turns long news articles into concise summaries
 
 ---
 
-## ✨ Features
+## Features
 
 - **Paste text** and instantly get a **concise summary**
 - Choose a model:
@@ -20,7 +20,7 @@ A lightweight Streamlit app that turns long news articles into concise summaries
 
 ---
 
-## 🧱 Tech Stack
+## Tech Stack
 
 - **Frontend / App:** Streamlit `1.36.0`
 - **NLP:** Transformers `4.46.3`, Tokenizers `0.20.3`
@@ -29,7 +29,7 @@ A lightweight Streamlit app that turns long news articles into concise summaries
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 .
@@ -40,7 +40,7 @@ A lightweight Streamlit app that turns long news articles into concise summaries
 
 ---
 
-## 🚀 Quick Start (Local)
+## Quick Start (Local)
 
 > Requires Python 3.11
 
@@ -75,7 +75,7 @@ pip install ^
 
 ---
 
-## 🖥️ How to Use
+## How to Use
 
 1. Open the app.
 2. Pick a **model** (DistilBART is fastest on CPU).
@@ -85,7 +85,7 @@ pip install ^
 
 ---
 
-## 🧠 Implementation Highlights
+## Implementation Highlights
 
 - **Single `st.set_page_config`** call at the **top** of `app.py` (required by Streamlit).
 - **Chunking**: large inputs are split into ~2.5k-char chunks and summarized piecewise; if multiple parts, a final pass tightens the output.
@@ -94,7 +94,7 @@ pip install ^
 
 ---
 
-## ☁️ Deployment Notes (Streamlit Cloud)
+## Deployment Notes (Streamlit Cloud)
 
 - The app is deployed on Streamlit Cloud with **Python 3.11**.
 - We pinned **Transformers 4.46.3 + Tokenizers 0.20.x** so Cloud can use **prebuilt wheels** (no Rust build step).
@@ -117,7 +117,7 @@ pip install ^
 
 ---
 
-## 🧪 Example Code Snippet (core)
+## Example Code Snippet (core)
 
 ```python
 import streamlit as st
